@@ -1,3 +1,7 @@
+from datetime import datetime as dt
+
+
+
 # Resources available in the coffee machine
 resources = {
     "water": 2000,  # in ml
@@ -12,6 +16,19 @@ menu = {
     "latte": {"water": 200, "milk": 150, "coffee": 24, "money": 2.5},
     "cappuccino": {"water": 250, "milk": 100, "coffee": 24, "money": 3.0},
 }
+
+def printreciept(order, cardorcash, change=0, cardnumber=0):
+    """Print reciepts (called in the transactionprocess function)"""
+
+    reciept = (f"Order made at {dt.now()}: \n "
+    f"{order}----------------A${menu[order]['money']} \n"
+    f"Change: A${change} \n"
+    f"Paid fully by {cardorcash} \n")
+
+    print(reciept)
+    if cardorcash == "card":
+        print(f"**** **** **** {str(cardnumber[-5:-1])} \n")
+
 
 def viewmenu():
     for drink in menu:
@@ -31,33 +48,56 @@ def checkresources(order):
     if truefalse:
         return 1
 
+
 def processtransaction(order):
-    """This is the money processing part. (Accepting money, refunding money etc...)"""
+    """This is the money processing part. (Accepting money, refunding money etc...)
+    """
     #ask for money
-    andruaters = int(input("How many andruaters do you have? "))
-    andrimes = int(input("How many andrimes do you have? "))       #add error prevention system
-    andrickles = int(input("How many andricks do you have? "))
-    andrennies = int(input("How many andrennies do you have? "))
-    moneyin = andruaters * 0.25 + andrimes * 0.10 + andrickles * 0.05 + andrennies * 0.01
+    cardorcash = input("Would you like to pay using card or cash?: ").lower()
+    if cardorcash == "cash":
+        andruaters = int(input("How many andruaters do you have? "))
+        andrimes = int(input("How many andrimes do you have? "))       #add error prevention system
+        andrickles = int(input("How many andricks do you have? "))
+        andrennies = int(input("How many andrennies do you have? "))
+        moneyin = andruaters * 0.25 + andrimes * 0.10 + andrickles * 0.05 + andrennies * 0.01
 
 #verify sufficient funds y/n
 #if enough money
-    if moneyin == menu[order]["money"]:
-        resources["money"] += moneyin
-        print("Transaction successful.")
-        return 1
+        if moneyin == menu[order]["money"]:
+            resources["money"] += moneyin
+            print("Transaction successful. \n")
+            printreciept(order, cardorcash) #print reciept
+            return 1
 # if too much money
-    if moneyin > menu[order]["money"]:
-        resources["money"] += moneyin
-        print("Transaction successful.")
-        print(f"You have A${round(moneyin - menu[order]['money'], 2)} of change.") #return money, rounded to 2dp
-        resources["money"] -= moneyin - menu[order]['money']
-        return 1
-    else:  #if insufficient
-        print("You don't have enough money!")
+        if moneyin > menu[order]["money"]:
+            resources["money"] += moneyin
+            print("Transaction successful.")
+            print(f"You have A${round(moneyin - menu[order]['money'], 2)} of change. \n") #return money, rounded to 2dp
+            resources["money"] -= moneyin - menu[order]['money']
+            printreciept(order, cardorcash, change=moneyin - menu[order]['money'])
+            return 1
+        else:  #if insufficient
+            print("You don't have enough money!")
         #refund
-        print(f"Refunding A${moneyin}.")
-        return 0
+            print(f"Refunding A${moneyin}. \n")
+            return 0
+
+    elif cardorcash == "card":
+        cardno = input("Enter card number (without spacing): ")
+        while True:
+            if cardno.isdigit() and len(cardno) == 16:
+                print("Transaction successful.")
+                resources["money"] += menu[order]["money"]
+                printreciept(order, cardorcash, cardnumber=cardno)
+                return 1
+            else:
+                print("Invalid card number.")
+                cardno = input("Enter card number without spacing (Or press [ENTER] to start over): ")
+                if cardno == "":
+                    return 0
+
+
+
 
 def makecoffee(order):
     """Make a coffee of the user's choice"""
@@ -105,6 +145,7 @@ while coffee_machine == "on":
 # take off
     if order == "off":
         coffee_machine = "off"
+        print("Powering off.")
         break
 # view menu
     elif order == "menu":
@@ -135,12 +176,12 @@ while coffee_machine == "on":
 
 
 
-
-
 #order not existing (should be the last elif)
     elif order not in menu:
         print(f"Sorry, {order} does not exist!")
 
+
+print("Machine status: off")
 
 
 
