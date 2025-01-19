@@ -14,19 +14,56 @@ menu = {
 }
 
 def checkresources(order):
-    global resources
     truefalse = False
     """check the resources if enough for each order"""
     for resource, value in menu[order].items():
-        if value >= resources[resource]:
+        if resource == "money": #skip the money part
+            continue
+        if value <= resources[resource]:
             truefalse = True
         else:
-            return False
+            return 0
 
     if truefalse:
-        return True
+        return 1
 
+def processtransaction(order):
+    """This is the money processing part. (Accepting money, refunding money etc...)"""
+    #ask for money
+    andruaters = int(input("How many andruaters do you have? "))
+    andrimes = int(input("How many andrimes do you have? "))       #add error prevention system
+    andrickles = int(input("How many andricks do you have? "))
+    andrennies = int(input("How many andrennies do you have? "))
+    moneyin = andruaters * 0.25 + andrimes * 0.10 + andrickles * 0.05 + andrennies * 0.01
 
+#verify sufficient funds y/n
+#if enough money
+    if moneyin == menu[order]["money"]:
+        resources["money"] += moneyin
+        print("Transaction successful.")
+        return 1
+# if too much money
+    if moneyin > menu[order]["money"]:
+        resources["money"] += moneyin
+        print("Transaction successful.")
+        print(f"You have A${round(moneyin - menu[order]['money'], 2)} of change.") #return money, rounded to 2dp
+        resources["money"] -= moneyin - menu[order]['money']
+        return 1
+    else:  #if insufficient
+        print("You don't have enough money!")
+        #refund
+        print(f"Refunding A${moneyin}.")
+        return 0
+
+def makecoffee(order):
+    """Make a coffee of the user's choice"""
+    #deduct resource
+    for resource in resources:
+        #check if resource is money first
+        if resource == "money":
+            continue
+        resources[resource] -= menu[order][resource]
+    print(f"Here is your {order}! Bon Appetit!")
 
 # a loop while the coffee machine is on
 #take the order
@@ -54,8 +91,18 @@ while coffee_machine == "on":
 
         if sufficient:
             print("Sure!")
+            sufficientfunds = processtransaction(order)
+            if sufficientfunds == 0:
+                continue  # next order
+            else:
+                print("Making Coffee.")
+                makecoffee(order)
+
         else:
             print("Not enough resources.")
+
+
+
 
 
 
