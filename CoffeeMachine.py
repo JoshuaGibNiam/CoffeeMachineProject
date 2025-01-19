@@ -1,8 +1,8 @@
 # Resources available in the coffee machine
 resources = {
-    "water": 500,  # in ml
-    "milk": 300,   # in ml
-    "coffee": 100, # in grams
+    "water": 2000,  # in ml
+    "milk": 1500,   # in ml
+    "coffee": 500, # in grams
     "money" : 0
 }
 
@@ -12,6 +12,10 @@ menu = {
     "latte": {"water": 200, "milk": 150, "coffee": 24, "money": 2.5},
     "cappuccino": {"water": 250, "milk": 100, "coffee": 24, "money": 3.0},
 }
+
+def viewmenu():
+    for drink in menu:
+        print(f"{drink}: A${menu[drink]["money"]}")
 
 def checkresources(order):
     truefalse = False
@@ -65,30 +69,53 @@ def makecoffee(order):
         resources[resource] -= menu[order][resource]
     print(f"Here is your {order}! Bon Appetit!")
 
+def remove(name):
+    """Allows user to remove a certain item from the menu"""
+    global menu
+    if name in menu:
+        del menu[name]
+        print(f"You have successfully removed {name}")
+    else:
+        print(f"{name} does not exist!")
+
+def add():
+    global menu
+
+    #ask for details
+    name = input("What will you name your item?: ")
+    water = int(input("How much water (ml) does it need?: "))
+    milk = int(input("How much milk (ml) does it need?: ")) #optional: add try except
+    coffee = int(input("How much coffee (g) does it need?: "))
+    money = float(input("How much money does it cost (A$)?: "))
+
+    # update menu
+    menu.update({name: {"water" : water,  "milk" : milk, "coffee" : coffee, "money" : money}})
+    print(f"You have successfully added {name}!")
+
+
+
+######################################################
+######################################################
 # a loop while the coffee machine is on
 #take the order
 coffee_machine = "on"
 while coffee_machine == "on":
-    order = input("What would you like to order?(espresso: A$1.50 / latte: A$2.50 /"
-"cappuccino: A$3.00): ").lower()
+    order = input("What would you like to order? (type 'menu' for to view the menu): ").lower()
 
 # take off
     if order == "off":
         coffee_machine = "off"
         break
+# view menu
+    elif order == "menu":
+        viewmenu()
 # report
     elif order == 'report':
         print(*list(f"{item} = {value} " for item, value in resources.items()), sep="\n")
 
 #get a drink
     elif order in menu:
-        if order == "espresso":
-            sufficient = checkresources("espresso")
-        elif order == "latte":
-            sufficient = checkresources("latte")
-        elif order == "cappuccino":
-            sufficient = checkresources("cappuccino")
-
+        sufficient = checkresources(order)
         if sufficient:
             print("Sure!")
             sufficientfunds = processtransaction(order)
@@ -97,9 +124,23 @@ while coffee_machine == "on":
             else:
                 print("Making Coffee.")
                 makecoffee(order)
-
         else:
             print("Not enough resources.")
+    #add & remove
+    elif order == "add":
+        add()
+    elif order == "remove":
+        removedobject = input("What would you like to remove?: ")
+        remove(removedobject)
+
+
+
+
+
+#order not existing (should be the last elif)
+    elif order not in menu:
+        print(f"Sorry, {order} does not exist!")
+
 
 
 
