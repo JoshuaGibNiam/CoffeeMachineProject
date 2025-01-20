@@ -1,5 +1,22 @@
-from datetime import datetime as dt
+""""This program is simulating a coffee machine.
+The user can order coffees that are in the menu (and also view the menu),
+paying by cash (called androllars)or by credit card.
+The machine will also print reciepts and automatically record the orders
+and transactions for the admin. This program also includes features for admins only.
+Admins can:
+1. View order log (includes time of order)
+2. view resources
+3. refill resources
+4. add or remove items from the menu
 
+That's pretty much all!"""
+
+
+
+
+
+
+from datetime import datetime as dt
 
 
 # Resources available in the coffee machine
@@ -19,7 +36,7 @@ menu = {
 
 def logtransaction(order, paid, change=0, cardnumber=0):
     """automatically log orders, used in processtransaction() function"""
-    with open("log.txt", "a") as file:
+    with open("Scripts/.gitignore/log.txt", "a") as file:
         file.write(f"{order} ordered at {dt.now()} -- A${paid} fully paid -- Change: A${round(change, 2)} \n")
         if cardnumber == 0:
             file.write("Order above paid by cash.")
@@ -30,7 +47,7 @@ def logtransaction(order, paid, change=0, cardnumber=0):
 
 def viewlog():
     """Allows admin to view transactions"""
-    with open("log.txt", "r") as file:
+    with open("Scripts/.gitignore/log.txt", "r") as file:
         print(file.read())
 
 def refill():
