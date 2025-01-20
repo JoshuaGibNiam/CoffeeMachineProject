@@ -94,9 +94,10 @@ def processtransaction(order):
     #ask for money
     while True:
         cardorcash = input("Would you like to pay using card or cash?: ").lower() #add error prevention
-        assert cardorcash in ["card", "cash"], "Please Enter 'card' or 'cash'."
         if cardorcash in ["card", "cash"]:
             break
+        else:
+            print("Please enter 'card' or 'cash'.")
     #cash option
     if cardorcash == "cash":
         while True:
