@@ -7,7 +7,7 @@ resources = {
     "water": 2000,  # in ml
     "milk": 1500,   # in ml
     "coffee": 500, # in grams
-    "money" : 0
+    "money" : 0  #this is the profit made
 }
 
 # Needed resources and prices of coffee types
@@ -17,22 +17,61 @@ menu = {
     "cappuccino": {"water": 250, "milk": 100, "coffee": 24, "money": 3.0},
 }
 
+def logtransaction(order, paid, change=0, cardnumber=0):
+    """automatically log orders, used in processtransaction() function"""
+    with open("log.txt", "a") as file:
+        file.write(f"{order} ordered at {dt.now()} -- A${paid} fully paid -- Change: A${round(change, 2)} \n")
+        if cardnumber == 0:
+            file.write("Order above paid by cash.")
+        else:
+            file.write(f"Order above paid by card: **** **** **** {cardnumber[-4:]}.")
+
+        file.write("\n")
+
+def viewlog():
+    """Allows admin to view transactions"""
+    with open("log.txt", "r") as file:
+        print(file.read())
+
+def refill():
+    """allows admin to refill resources """
+    global resources #we need to modify the resources list
+    for key in resources.keys():
+        addedresource = 0
+        if key == "money": #skip money
+            continue
+        while True:
+            try:
+                addedresource = int(input(f"How much {key} would you like to refill?: "))
+                break
+            except ValueError:
+                print("Please enter a whole number.")
+        resources.update({key: addedresource + resources[key]})
+
+    print("Update Complete.")
+    print(*list(f"{item} = {value} " for item, value in resources.items()), sep="\n")
+    print("\n")
+
 def printreciept(order, cardorcash, change=0, cardnumber=0):
     """Print reciepts (called in the transactionprocess function)"""
 
-    reciept = (f"Order made at {dt.now()}: \n "
-    f"{order}----------------A${menu[order]['money']} \n"
-    f"Change: A${change} \n"
-    f"Paid fully by {cardorcash} \n")
+    reciept = (f"Order made at {dt.now()}: \n "           #time of order
+    f"{order}----------------A${menu[order]['money']} \n" #order, order price
+    f"Change: A${round(change, 2)} \n"                    #change
+    f"Paid fully by {cardorcash} \n")                     #paid by card or cash
 
     print(reciept)
-    if cardorcash == "card":
-        print(f"**** **** **** {str(cardnumber[-5:-1])} \n")
+    if cardorcash == "card": #if user uses card, print card number
+        print(f"**** **** **** {str(cardnumber[-4:])} \n")
 
 
 def viewmenu():
+    """allows the user to view menu"""
+    print("\nToday's menu: ")
+    print("-" * 20)
     for drink in menu:
         print(f"{drink}: A${menu[drink]["money"]}")
+    print("\n")  # \n makes it more organised
 
 def checkresources(order):
     truefalse = False
@@ -53,12 +92,23 @@ def processtransaction(order):
     """This is the money processing part. (Accepting money, refunding money etc...)
     """
     #ask for money
-    cardorcash = input("Would you like to pay using card or cash?: ").lower()
+    while True:
+        cardorcash = input("Would you like to pay using card or cash?: ").lower() #add error prevention
+        assert cardorcash in ["card", "cash"], "Please Enter 'card' or 'cash'."
+        if cardorcash in ["card", "cash"]:
+            break
+    #cash option
     if cardorcash == "cash":
-        andruaters = int(input("How many andruaters do you have? "))
-        andrimes = int(input("How many andrimes do you have? "))       #add error prevention system
-        andrickles = int(input("How many andricks do you have? "))
-        andrennies = int(input("How many andrennies do you have? "))
+        while True:
+            try:
+                andruaters = int(input("How many andruaters do you have? "))
+                andrimes = int(input("How many andrimes do you have? "))
+                andrickles = int(input("How many andricks do you have? "))
+                andrennies = int(input("How many andrennies do you have? "))
+                break
+            except ValueError:
+                print("Try again.")
+        #convert to A$
         moneyin = andruaters * 0.25 + andrimes * 0.10 + andrickles * 0.05 + andrennies * 0.01
 
 #verify sufficient funds y/n
@@ -67,6 +117,7 @@ def processtransaction(order):
             resources["money"] += moneyin
             print("Transaction successful. \n")
             printreciept(order, cardorcash) #print reciept
+            logtransaction(order, menu[order]["money"])
             return 1
 # if too much money
         if moneyin > menu[order]["money"]:
@@ -75,6 +126,7 @@ def processtransaction(order):
             print(f"You have A${round(moneyin - menu[order]['money'], 2)} of change. \n") #return money, rounded to 2dp
             resources["money"] -= moneyin - menu[order]['money']
             printreciept(order, cardorcash, change=moneyin - menu[order]['money'])
+            logtransaction(order, menu[order]["money"], change=moneyin - menu[order]['money'])
             return 1
         else:  #if insufficient
             print("You don't have enough money!")
@@ -82,15 +134,17 @@ def processtransaction(order):
             print(f"Refunding A${moneyin}. \n")
             return 0
 
+    #card option
     elif cardorcash == "card":
         cardno = input("Enter card number (without spacing): ")
         while True:
-            if cardno.isdigit() and len(cardno) == 16:
+            if cardno.isdigit() and len(cardno) == 16: #check if the credit card number is valid
                 print("Transaction successful.")
                 resources["money"] += menu[order]["money"]
-                printreciept(order, cardorcash, cardnumber=cardno)
+                printreciept(order, cardorcash, cardnumber=cardno) #print reciept
+                logtransaction(order, menu[order]["money"], cardnumber=cardno)
                 return 1
-            else:
+            else: #if card number is invalid
                 print("Invalid card number.")
                 cardno = input("Enter card number without spacing (Or press [ENTER] to start over): ")
                 if cardno == "":
@@ -119,14 +173,20 @@ def remove(name):
         print(f"{name} does not exist!")
 
 def add():
+    """Allows admin to add item"""
     global menu
 
     #ask for details
     name = input("What will you name your item?: ")
-    water = int(input("How much water (ml) does it need?: "))
-    milk = int(input("How much milk (ml) does it need?: ")) #optional: add try except
-    coffee = int(input("How much coffee (g) does it need?: "))
-    money = float(input("How much money does it cost (A$)?: "))
+    while True:
+        try:
+            water = int(input("How much water (ml) does it need?: "))
+            milk = int(input("How much milk (ml) does it need?: ")) #optional: add try except
+            coffee = int(input("How much coffee (g) does it need?: "))
+            money = float(input("How much money does it cost (A$)?: "))
+            break
+        except ValueError:
+            print("Invalid input. Please enter again.")
 
     # update menu
     menu.update({name: {"water" : water,  "milk" : milk, "coffee" : coffee, "money" : money}})
@@ -140,20 +200,13 @@ def add():
 #take the order
 coffee_machine = "on"
 while coffee_machine == "on":
-    order = input("What would you like to order? (type 'menu' for to view the menu): ").lower()
-
-# take off
-    if order == "off":
-        coffee_machine = "off"
-        print("Powering off.")
-        break
+    viewmenu()
+    order = input("What would you like to order?: ").lower()
+    ###off option moved to admin orders below, disallowing customers to turn off the machine
 # view menu
-    elif order == "menu":
+    if order == "menu":
         viewmenu()
-# report
-    elif order == 'report':
-        print(*list(f"{item} = {value} " for item, value in resources.items()), sep="\n")
-
+# report also moved to admin controls
 #get a drink
     elif order in menu:
         sufficient = checkresources(order)
@@ -167,19 +220,36 @@ while coffee_machine == "on":
                 makecoffee(order)
         else:
             print("Not enough resources.")
-    #add & remove
-    elif order == "add":
-        add()
-    elif order == "remove":
-        removedobject = input("What would you like to remove?: ")
-        remove(removedobject)
 
+    elif order == "admin": #extra: allows admin to refill resources and do other stuff
+        pwd = input("Enter your password: ") #enter admin password to confirm
+        if pwd != "111222":
+            print("Wrong password! Access denied.")
+            continue
+        else:
+            adminorder = input("What would you like to do?: ") #add, remove, refill
+            if adminorder == "add":
+                add()
+            elif adminorder == "remove":
+                removedobject = input("What would you like to remove?: ")
+                remove(removedobject)
+            elif adminorder == "off":
+                coffee_machine = "off"
+                print("Powering off.")
+                break
+            elif adminorder == 'report':
+                print(*list(f"{item} = {value} " for item, value in resources.items()), sep="\n")
 
+            elif adminorder == "refill":
+                refill()
+            elif adminorder == "view":
+                viewlog()
+            else:
+                print("Invalid input.")
 
 #order not existing (should be the last elif)
     elif order not in menu:
         print(f"Sorry, {order} does not exist!")
-
 
 print("Machine status: off")
 
