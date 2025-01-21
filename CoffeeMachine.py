@@ -2,7 +2,8 @@
 The user can order coffees that are in the menu (and also view the menu),
 paying by cash (called androllars)or by credit card.
 The machine will also print reciepts and automatically record the orders
-and transactions for the admin. This program also includes features for admins only.
+and transactions for the admin （pwd is 111222).
+This program also includes features for admins only.
 Admins can:
 1. View order log (includes time of order)
 2. view resources
@@ -34,7 +35,7 @@ menu = {
     "cappuccino": {"water": 250, "milk": 100, "coffee": 24, "money": 3.0},
 }
 
-def logtransaction(order, paid, change=0, cardnumber=0):
+def logTransaction(order, paid, change=0, cardnumber=0):
     """automatically log orders, used in processtransaction() function"""
     with open("Scripts/.gitignore/log.txt", "a") as file:
         file.write(f"{order} ordered at {dt.now()} -- A${paid} fully paid -- Change: A${round(change, 2)} \n")
@@ -45,7 +46,7 @@ def logtransaction(order, paid, change=0, cardnumber=0):
 
         file.write("\n")
 
-def viewlog():
+def viewLog():
     """Allows admin to view transactions"""
     with open("Scripts/.gitignore/log.txt", "r") as file:
         print(file.read())
@@ -69,7 +70,7 @@ def refill():
     print(*list(f"{item} = {value} " for item, value in resources.items()), sep="\n")
     print("\n")
 
-def printreciept(order, cardorcash, change=0, cardnumber=0):
+def printReciept(order, cardorcash, change=0, cardnumber=0):
     """Print reciepts (called in the transactionprocess function)"""
 
     reciept = (f"Order made at {dt.now()}: \n "           #time of order
@@ -82,7 +83,7 @@ def printreciept(order, cardorcash, change=0, cardnumber=0):
         print(f"**** **** **** {str(cardnumber[-4:])} \n")
 
 
-def viewmenu():
+def viewMenu():
     """allows the user to view menu"""
     print("\nToday's menu: ")
     print("-" * 20)
@@ -105,7 +106,7 @@ def checkresources(order):
         return 1
 
 
-def processtransaction(order):
+def processTransaction(order):
     """This is the money processing part. (Accepting money, refunding money etc...)
     """
     #ask for money
@@ -117,15 +118,18 @@ def processtransaction(order):
             print("Please enter 'card' or 'cash'.")
     #cash option
     if cardorcash == "cash":
-        while True:
-            try:
-                andruaters = int(input("How many andruaters do you have? "))
-                andrimes = int(input("How many andrimes do you have? "))
-                andrickles = int(input("How many andricks do you have? "))
-                andrennies = int(input("How many andrennies do you have? "))
-                break
-            except ValueError:
-                print("Try again.")
+        andruaters = int(input("How many andruaters do you have? "))
+        andrimes = int(input("How many andrimes do you have? "))
+        andrickles = int(input("How many andricks do you have? "))
+        andrennies = int(input("How many andrennies do you have? "))
+
+        while type(andruaters) != int or type(andrimes) != int or type(andrickles) != int or type(andrennies) != int:
+            print("\nPlease enter an integer.")
+            andruaters = int(input("How many andruaters do you have? "))
+            andrimes = int(input("How many andrimes do you have? "))
+            andrickles = int(input("How many andricks do you have? "))
+            andrennies = int(input("How many andrennies do you have? "))
+
         #convert to A$
         moneyin = andruaters * 0.25 + andrimes * 0.10 + andrickles * 0.05 + andrennies * 0.01
 
@@ -134,8 +138,8 @@ def processtransaction(order):
         if moneyin == menu[order]["money"]:
             resources["money"] += moneyin
             print("Transaction successful. \n")
-            printreciept(order, cardorcash) #print reciept
-            logtransaction(order, menu[order]["money"])
+            printReciept(order, cardorcash) #print reciept
+            logTransaction(order, menu[order]["money"])
             return 1
 # if too much money
         if moneyin > menu[order]["money"]:
@@ -143,8 +147,8 @@ def processtransaction(order):
             print("Transaction successful.")
             print(f"You have A${round(moneyin - menu[order]['money'], 2)} of change. \n") #return money, rounded to 2dp
             resources["money"] -= moneyin - menu[order]['money']
-            printreciept(order, cardorcash, change=moneyin - menu[order]['money'])
-            logtransaction(order, menu[order]["money"], change=moneyin - menu[order]['money'])
+            printReciept(order, cardorcash, change=moneyin - menu[order]['money'])
+            logTransaction(order, menu[order]["money"], change=moneyin - menu[order]['money'])
             return 1
         else:  #if insufficient
             print("You don't have enough money!")
@@ -154,13 +158,13 @@ def processtransaction(order):
 
     #card option
     elif cardorcash == "card":
-        cardno = input("Enter card number (without spacing): ")
+        cardno = input("Enter card number (without spacing, must have 16 digits): ")
         while True:
             if cardno.isdigit() and len(cardno) == 16: #check if the credit card number is valid
                 print("Transaction successful.")
                 resources["money"] += menu[order]["money"]
-                printreciept(order, cardorcash, cardnumber=cardno) #print reciept
-                logtransaction(order, menu[order]["money"], cardnumber=cardno)
+                printReciept(order, cardorcash, cardnumber=cardno) #print reciept
+                logTransaction(order, menu[order]["money"], cardnumber=cardno)
                 return 1
             else: #if card number is invalid
                 print("Invalid card number.")
@@ -218,19 +222,19 @@ def add():
 #take the order
 coffee_machine = "on"
 while coffee_machine == "on":
-    viewmenu()
+    viewMenu()
     order = input("What would you like to order?: ").lower()
     ###off option moved to admin orders below, disallowing customers to turn off the machine
 # view menu
     if order == "menu":
-        viewmenu()
+        viewMenu()
 # report also moved to admin controls
 #get a drink
     elif order in menu:
         sufficient = checkresources(order)
         if sufficient:
             print("Sure!")
-            sufficientfunds = processtransaction(order)
+            sufficientfunds = processTransaction(order)
             if sufficientfunds == 0:
                 continue  # next order
             else:
@@ -261,7 +265,7 @@ while coffee_machine == "on":
             elif adminorder == "refill":
                 refill()
             elif adminorder == "view":
-                viewlog()
+                viewLog()
             else:
                 print("Invalid input.")
 
